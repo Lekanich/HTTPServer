@@ -11,7 +11,7 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args){
-        System.out.println("Suka, eto pizdec!");
+        System.out.println("Something message!");
         List<String> list = new ArrayList<String>();
         list.add("sdasd");
         list.add("adsds");
