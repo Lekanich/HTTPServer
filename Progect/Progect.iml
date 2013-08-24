@@ -13,7 +13,9 @@
           <root url="jar://$MODULE_DIR$/lib/jar/all-in-one/netty-all-4.0.0.Final.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/lib/jar/all-in-one/netty-all-4.0.0.Final-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>
