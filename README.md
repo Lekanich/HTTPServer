@@ -1,4 +1,4 @@
 HTTPServer
 ==========
-First file for test
-Second correction.
+HTTP server.
+Test work.
