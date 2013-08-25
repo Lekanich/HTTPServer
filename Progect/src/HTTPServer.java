@@ -34,7 +34,7 @@ public class HTTPServer {
         public void run() {
             try {
                 readInputHeaders();
-                writeResponse("<html><body><h1>Hello from Habrahabr</h1></body></html>");
+                writeResponse("<html><body><h1>Hello from Server</h1></body></html>");
             } catch (Throwable t) {
                 /*do nothing*/
             } finally {
