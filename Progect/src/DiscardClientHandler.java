@@ -31,7 +31,7 @@ public class DiscardClientHandler extends SimpleChannelInboundHandler<Object> {
     public void channelActive(ChannelHandlerContext ctx)
             throws Exception {
         this.ctx = ctx;
-        byte wr = 1;
+        byte wr = 100;
 
         // Initialize the message.
         if(messageSize>1)

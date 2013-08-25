@@ -46,23 +46,4 @@ public class HTTPServer {
             workerGroup.shutdownGracefully();
         }
     }
-
-    public static void main(String[] args) throws Exception {
-        BufferedReader reader = new BufferedReader(new FileReader(new File(fileIni)));
-        List<String> listOption = new ArrayList<String>();
-        String line = reader.readLine();
-        while (line != null) {
-            listOption.add(line);
-            line = reader.readLine();
-        }
-        reader.readLine();
-
-        int port;
-        if (args.length > 0) {
-            port = Integer.parseInt(args[0]);
-        } else {
-            port = 8080;
-        }
-        new HTTPServer(port).run();
-    }
 }
