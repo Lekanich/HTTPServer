@@ -1,8 +1,8 @@
+package study;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-
-import java.util.Date;
 
 public class TimeClientHandler extends ChannelInboundHandlerAdapter {
     ByteBuf buf;

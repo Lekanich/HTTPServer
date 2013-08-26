@@ -6,6 +6,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import server.statistic.KeeperStatistic;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,10 +23,12 @@ import java.util.List;
  */
 public class HTTPServer {
     private final int port;
+    private KeeperStatistic keeper;
     public final static String fileIni = "Progect/start.ini";
 
     public HTTPServer(int port) {
         this.port = port;
+        this.keeper = new KeeperStatistic();
     }
 
     public void run() throws Exception {
@@ -37,7 +40,7 @@ public class HTTPServer {
             b.option(ChannelOption.SO_BACKLOG, 1024);
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new HTTPServerInitializer());
+                    .childHandler(new HTTPServerInitializer(keeper));
 
             Channel ch = b.bind(port).sync().channel();
             ch.closeFuture().sync();

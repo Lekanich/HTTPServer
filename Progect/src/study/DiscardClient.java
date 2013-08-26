@@ -1,4 +1,4 @@
-/**
+package study; /**
  * Created with IntelliJ IDEA.
  * User: Sasha
  * Date: 24.08.13
@@ -52,7 +52,7 @@ public class DiscardClient {
         // Print usage if no argument is specified.
 //        if (args.length < 2 || args.length > 3) {
 //            System.err.println(
-//                    "Usage: " + DiscardClient.class.getSimpleName() +
+//                    "Usage: " + study.DiscardClient.class.getSimpleName() +
 //                            " <host> <port> [<first message size>]");
 //            return;
 //

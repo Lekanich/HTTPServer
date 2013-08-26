@@ -1,3 +1,5 @@
+package study;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -8,18 +10,13 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 /**
- * Created with IntelliJ IDEA.
- * User: Sasha
- * Date: 25.08.13
- * Time: 13:21
- * To change this template use File | Settings | File Templates.
+ * Discards any incoming data.
  */
-public class TimeServer {
-
+public class DiscardServer {
 
     private int port;
 
-    public TimeServer(int port) {
+    public DiscardServer(int port) {
         this.port = port;
     }
 
@@ -33,7 +30,7 @@ public class TimeServer {
                     .childHandler(new ChannelInitializer<SocketChannel>() { // (4)
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new TimeEncoder(), new TimeServerHandler());
+                            ch.pipeline().addLast(new DiscardServerHandler());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)          // (5)
@@ -59,6 +56,6 @@ public class TimeServer {
         } else {
             port = 8080;
         }
-        new TimeServer(port).run();
+        new DiscardServer(port).run();
     }
 }
