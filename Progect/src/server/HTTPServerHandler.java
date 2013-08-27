@@ -64,13 +64,24 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
+        pp(keeper.incCountConnected());
         p("channelActive");
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx){
+        pp(keeper.decCountConnected());
+        p("channelInactive");
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof HttpRequest) {
             HttpRequest req = (HttpRequest) msg;
+
+//            keeper.tut();
+
+
 
             String ip = ((InetSocketAddress)ctx.channel().remoteAddress()).getAddress().toString().substring(1);
             String uri = req.getUri();
@@ -79,7 +90,6 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             keeper.addIpStat(ip, date);
             keeper.addRequestDoneStatus( new RequestDoneStatus(ip,uriForTable,date,0,0,0) );
 
-            System.out.println(uri);
             if(uri.equals("/favicon.ico")) return;
             if(uri.equals(ADDRESS_HELLO)){
                 Thread.sleep(WAIT);
@@ -88,7 +98,6 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             if(uri.startsWith(ADDRESS_REDIRECT)){
                 //get URI for redirect
                 String newURI = getNewURI(uri);
-                p(newURI);
                 //add to keeper new or not new redirect URL
                 keeper.addUrlRedirectStat(newURI);
                 sendRedirect(ctx, newURI);
@@ -96,7 +105,7 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             }
             if(uri.equals(ADDRESS_STATUS)){
                int countConnections = 0;
-               ByteBuf status = Unpooled.copiedBuffer(keeper.getStat(countConnections), CharsetUtil.UTF_8);
+               ByteBuf status = Unpooled.copiedBuffer(keeper.getStat(), CharsetUtil.UTF_8);
                sendText(ctx, req, status);
             }else{
                 sendText(ctx, req, CONTENT_WRONG_ADDRESS);
@@ -134,7 +143,7 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void sendText(ChannelHandlerContext ctx, HttpRequest req, ByteBuf message) throws InterruptedException {
-        p("send text");
+        p("send text "+message.duplicate().capacity());
         if (HttpHeaders.is100ContinueExpected(req)) {
             ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
         }

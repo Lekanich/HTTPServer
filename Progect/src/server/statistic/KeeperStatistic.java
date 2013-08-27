@@ -1,7 +1,10 @@
 package server.statistic;
 
+import io.netty.bootstrap.ServerBootstrap;
+
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,12 +29,19 @@ public class KeeperStatistic {
     private Map<String, Date> ipStatLast;
     private Map<String, Integer> urlStatRedirect;
     private List<RequestDoneStatus> list;
+    private AtomicInteger connected;
+
 
     public KeeperStatistic(){
         ipStatCount = new HashMap<String, Integer>();
         ipStatLast = new HashMap<String, Date>();
         urlStatRedirect = new HashMap<String, Integer>();
         list = new LinkedList<RequestDoneStatus>();
+        connected = new AtomicInteger(0);
+    }
+
+    public static void p(Object o){
+        System.out.println(o);
     }
 
     public synchronized void addUrlRedirectStat(String url){
@@ -60,7 +70,7 @@ public class KeeperStatistic {
         ipStatLast.put(ip, date);
     }
 
-    public synchronized String getStat(int countConnections){
+    public synchronized String getStat(){
         //1
         StringBuilder sb = new StringBuilder(FIRST_STAT);
         Set<Map.Entry <String, Integer>> ipSCEntry =ipStatCount.entrySet();
@@ -71,7 +81,7 @@ public class KeeperStatistic {
         //2
         sb.append("\r\n").append(SECOND_STAT).append("\r\n");
         for(Map.Entry m : ipSCEntry)
-            sb.append(m.getKey()).append(" : ").append(m.getKey()).append("\r\n");
+            sb.append(m.getKey()).append(" : ").append(m.getValue()).append("\r\n");
         //3
         sb.append("\r\n").append(THIRD_STAT).append("\r\n");
         Set<Map.Entry <String, Date>> ipSDEntry =ipStatLast.entrySet();
@@ -97,7 +107,7 @@ public class KeeperStatistic {
             sb.append(EMPTY).append("\r\n");
         }
         //5
-        sb.append("\r\n").append(FIFTH_STAT).append(" : ").append(countConnections).append("\r\n");
+        sb.append("\r\n").append(FIFTH_STAT).append(" : ").append(connected.get()).append("\r\n");
         //6
         sb.append("\r\n").append(SIXTH_STAT).append("\r\n");
         if(!list.isEmpty()){
@@ -108,6 +118,14 @@ public class KeeperStatistic {
             sb.append(EMPTY).append("\r\n");
         }
         return sb.toString();
+    }
+
+    public int incCountConnected(){
+        return connected.incrementAndGet();
+    }
+
+    public int decCountConnected(){
+        return connected.decrementAndGet();
     }
 
     public synchronized Map<String, Integer> getIpStatCount() {

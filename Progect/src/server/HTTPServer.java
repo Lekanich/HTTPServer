@@ -6,6 +6,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.traffic.TrafficCounter;
 import server.statistic.KeeperStatistic;
 
 import java.io.BufferedReader;
@@ -28,7 +29,7 @@ public class HTTPServer {
 
     public HTTPServer(int port) {
         this.port = port;
-        this.keeper = new KeeperStatistic();
+            this.keeper = new KeeperStatistic();
     }
 
     public void run() throws Exception {
@@ -41,7 +42,6 @@ public class HTTPServer {
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new HTTPServerInitializer(keeper));
-
             Channel ch = b.bind(port).sync().channel();
             ch.closeFuture().sync();
         } finally {

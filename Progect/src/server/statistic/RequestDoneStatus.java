@@ -56,7 +56,7 @@ public class RequestDoneStatus {
     @Override
     public String toString(){
         Formatter f = new Formatter();
-        f.format("|%15s|%50s|%30s|%12s|%16s|",ip, url, date, sendByte, getByte, speed);
+        f.format("|%15s|%50s|%30s|%12s|%16s|%9s",ip, url, date, sendByte, getByte, speed);
         return f.toString();
     }
 }
