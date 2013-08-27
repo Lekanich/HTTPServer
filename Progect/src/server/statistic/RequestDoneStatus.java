@@ -66,6 +66,10 @@ public class RequestDoneStatus {
         this.sendByte = sendByte;
     }
 
+    public void addSendByte(int sendByte){
+        this.sendByte+=sendByte;
+    }
+
     public int getGetByte() {
         return getByte;
     }

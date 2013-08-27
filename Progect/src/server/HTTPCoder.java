@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.CombinedChannelDuplexHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import server.statistic.KeeperStatistic;
@@ -12,6 +13,7 @@ import server.statistic.RequestDoneStatus;
 
 import java.net.InetSocketAddress;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Created with IntelliJ IDEA.
@@ -60,14 +62,18 @@ public class HTTPCoder extends CombinedChannelDuplexHandler<HttpRequestDecoder, 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         System.out.println("write");
+        //get channel with the local keeper requestDoneStatus
         MyNioSocketChannel mns = (MyNioSocketChannel)ctx.channel();
 
-//        p("wr "+ctx.channel().hashCode());
-//        p("wr "+ctx.pipeline().hashCode());
         RequestDoneStatus rds = mns.getRequestAndRemove();
         if(rds!=null){
             DefaultFullHttpResponse d = (DefaultFullHttpResponse)msg;
+            //count the bytes of the message
             rds.setSendByte(d.content().readableBytes());
+            //count the bytes of the headers
+            for(Map.Entry<String, String> h : d.headers().entries()) {
+                rds.addSendByte(h.getKey().length()+h.getValue().length());
+            }
             keeper.addRequestDoneStatus(rds);
         }
         super.write(ctx, msg, promise);
