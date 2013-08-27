@@ -143,4 +143,10 @@ public class KeeperStatistic {
     public synchronized List<RequestDoneStatus> getListLastDoneRequests() {
         return list;
     }
+
+    public RequestDoneStatus getRequest(int id) {
+        for(RequestDoneStatus rds : list)
+            if(rds.getId() == id) return rds;
+        return null;
+    }
 }

@@ -28,16 +28,17 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("Hello from ALex", CharsetUtil.UTF_8));
     private static final ByteBuf CONTENT_WRONG_ADDRESS =
             Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("We work. Please choose another address.", CharsetUtil.UTF_8));
-    private static final String Message_ERROR = "Very very bad word. Because we have trouble on the server.\r\n";
+    private static final ByteBuf CONTENT_ERROR =
+            Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("Very very bad word. Because we have trouble on the server.\r\n", CharsetUtil.UTF_8));;
 
     private static final String ADDRESS_HELLO = "/hello";
     private static final String ADDRESS_REDIRECT = "/redirect?url=";
     private static final String ADDRESS_STATUS =  "/status";
     private static final String ADDRESS_PREFIX = "http://";
-
     private static final long WAIT = 10L;
 
     private final KeeperStatistic keeper;
+    private RequestDoneStatus rds;
 
     public HTTPServerHandler(KeeperStatistic keeper){
         super();
@@ -64,33 +65,35 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
-        pp(keeper.incCountConnected());
-        p("channelActive");
+        keeper.incCountConnected();
+//        p("channelActive");
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx){
-        pp(keeper.decCountConnected());
-        p("channelInactive");
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        keeper.decCountConnected();
+//        p("channelInactive");
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof HttpRequest) {
             HttpRequest req = (HttpRequest) msg;
-
-//            keeper.tut();
-
-
-
-            String ip = ((InetSocketAddress)ctx.channel().remoteAddress()).getAddress().toString().substring(1);
             String uri = req.getUri();
-            String uriForTable = decoder(HttpHeaders.getHost(req).concat(uri));
-            Date date = new Date(System.currentTimeMillis());
-            keeper.addIpStat(ip, date);
-            keeper.addRequestDoneStatus( new RequestDoneStatus(ip,uriForTable,date,0,0,0) );
+            MyNioSocketChannel mns = (MyNioSocketChannel)ctx.channel();
+            RequestDoneStatus rds = mns.getRequest();
+            if(rds!=null){
+                String uriForTable = decoder(HttpHeaders.getHost(req).concat(uri));
+                rds.setUrl(uriForTable);
+            }
 
-            if(uri.equals("/favicon.ico")) return;
+            if(uri.equals("/favicon.ico")) {
+                //remember in keeper this request
+                if(rds!=null)
+                    keeper.addRequestDoneStatus(mns.getRequestAndRemove());
+                return;
+            }
             if(uri.equals(ADDRESS_HELLO)){
                 Thread.sleep(WAIT);
                 sendText(ctx, req, CONTENT_HELLO);
@@ -104,11 +107,10 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
             if(uri.equals(ADDRESS_STATUS)){
-               int countConnections = 0;
                ByteBuf status = Unpooled.copiedBuffer(keeper.getStat(), CharsetUtil.UTF_8);
                sendText(ctx, req, status);
             }else{
-                sendText(ctx, req, CONTENT_WRONG_ADDRESS);
+               sendText(ctx, req, CONTENT_WRONG_ADDRESS);
             }
         }
     }
@@ -121,7 +123,7 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
     }
 
-    private String decoder(String oldURI){
+    private static String decoder(String oldURI){
         String newURI;
         try {
             newURI = URLDecoder.decode(oldURI, "UTF-8");
@@ -135,15 +137,14 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
         return newURI;
     }
 
-    private String getNewURI(String oldURI){
+    private static String getNewURI(String oldURI){
         String newURI = decoder(oldURI);
         newURI = newURI.substring(ADDRESS_REDIRECT.length()+1, newURI.length()-1);
         if(! newURI.startsWith(ADDRESS_PREFIX)) newURI = ADDRESS_PREFIX+newURI;
         return newURI;
     }
 
-    private void sendText(ChannelHandlerContext ctx, HttpRequest req, ByteBuf message) throws InterruptedException {
-        p("send text "+message.duplicate().capacity());
+    private static void sendText(ChannelHandlerContext ctx, HttpRequest req, ByteBuf message) throws InterruptedException {
         if (HttpHeaders.is100ContinueExpected(req)) {
             ctx.write(new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE));
         }
@@ -163,17 +164,16 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
         response.headers().set(HttpHeaders.Names.LOCATION, newUri);
-
         // Close the connection as soon as the error message is sent.
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+//        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
 
     private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
         FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, status, Unpooled.copiedBuffer(Message_ERROR, CharsetUtil.UTF_8));
+                HttpVersion.HTTP_1_1, status, CONTENT_ERROR.duplicate());
         response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/plain; charset=UTF-8");
-
         // Close the connection as soon as the error message is sent.
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
 }
