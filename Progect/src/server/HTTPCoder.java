@@ -39,30 +39,21 @@ public class HTTPCoder extends CombinedChannelDuplexHandler<HttpRequestDecoder, 
         this.keeper = keeper;
     }
 
-    private static void p(Object object){
-        System.out.println(object);
-    }
-
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println("channelRead");
         MyNioSocketChannel mns = (MyNioSocketChannel)ctx.channel();
-
-//        p("chr "+ctx.channel().hashCode());
-//        p("chr "+ctx.pipeline().hashCode());
         UnpooledUnsafeDirectByteBuf ub = (UnpooledUnsafeDirectByteBuf)msg;
+
         String ip = ((InetSocketAddress) mns.remoteAddress()).getAddress().toString().substring(1);
         Date date = new Date(System.currentTimeMillis());
         RequestDoneStatus rds = new RequestDoneStatus(String.valueOf(mns.hashCode()*ip.hashCode()), ip, null,date, 0,ub.readableBytes(),0);
         keeper.addIpStat(ip, date);
         mns.addRequest(rds);
-//        keeper.addRequestDoneStatus(rds);
         super.channelRead(ctx, msg);
     }
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        System.out.println("write");
         //get channel with the local keeper requestDoneStatus
         MyNioSocketChannel mns = (MyNioSocketChannel)ctx.channel();
 

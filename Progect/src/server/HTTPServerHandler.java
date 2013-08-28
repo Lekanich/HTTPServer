@@ -27,17 +27,17 @@ import java.util.regex.Pattern;
  */
 public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     private static final ByteBuf CONTENT_HELLO =
-            Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("Hello from ALex", CharsetUtil.UTF_8));
+            Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("Hello World", CharsetUtil.UTF_8));
     private static final ByteBuf CONTENT_WRONG_ADDRESS =
             Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("We work. Please choose another address.", CharsetUtil.UTF_8));
     private static final ByteBuf CONTENT_ERROR =
             Unpooled.unreleasableBuffer(Unpooled.copiedBuffer("Very very bad word. Because we have trouble on the server.\r\n", CharsetUtil.UTF_8));;
-
+    //string for check
     private static final String ADDRESS_HELLO = "/hello";
     private static final String ADDRESS_REDIRECT = "/redirect?url=";
     private static final String ADDRESS_STATUS =  "/status";
     private static final String ADDRESS_PREFIX = "http://";
-    private static final long WAIT = 10L;
+    private static final long WAIT = 10000L;
 
     private final KeeperStatistic keeper;
     private RequestDoneStatus rds;
@@ -52,30 +52,16 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
         ctx.flush();
     }
 
-    public static void p(Object p){
-        System.out.println(p);
-    }
-
-    public static void pp(Object p){
-        System.out.print(p);
-    }
-
-    public static void pz(){
-        p("-----------------");
-    }
-
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
         keeper.incCountConnected();
-//        p("channelActive");
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
         keeper.decCountConnected();
-//        p("channelInactive");
     }
 
     @Override
@@ -95,16 +81,16 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             if(keeper.isSystemRequest(strangerURL)){
                 keeper.decIpStat(((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().toString().substring(1));
                 RequestDoneStatus rdsV = keeper.getRequest(strangerURL);
+                // If there is a list of the last 16, then check the speed, if not, it does not make sense.
                 if(rdsV!=null){
                     long timeFirst = rdsV.getBackDate().getTime();
                     long timeLast = rds.getDate().getTime();
+                    //Calculate the time difference between dispatch and arrival of the message.
                     long countTime = timeLast-timeFirst;
-//                    p("Count time: "+countTime);
+                    //Count the number of bytes that have been sent and received.
                     int countBytes = rds.getGetByte()+rdsV.getSendByte();
-//                    p("Count bytes: "+countBytes);
                     int speed = (int)(1000*(double)countBytes/(double)countTime);
-//                    p("Speed: "+speed);
-                    rdsV.setId(String.valueOf(mns.hashCode()*strangerURL.hashCode()));
+
                     rdsV.setSpeed(speed);
                     rds.setContent(rdsV);
                     uri = rdsV.getUrl();
@@ -112,10 +98,10 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
                 }
             }else{
                 //set for count speed
-                String newStrangeURI = ADDRESS_PREFIX+HttpHeaders.getHost(req)+"/"+rds.getId();
+                String newSystemRequestURI = ADDRESS_PREFIX+HttpHeaders.getHost(req)+"/"+rds.getId();
+//                p(newSystemRequestURI);
                 keeper.addSystemRequest(rds.getId());
-//                p(newStrangeURI);
-                sendRedirect(ctx, newStrangeURI);
+                sendRedirect(ctx, newSystemRequestURI);
                 return;
             }
 
@@ -148,12 +134,16 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        p("exceptionCa");
 //        cause.printStackTrace();
         sendError(ctx, HttpResponseStatus.BAD_REQUEST);
         ctx.close();
     }
 
+    /**
+     *
+     * @param oldURI not normalized uri
+     * @return normalized url
+     */
     private static String decoder(String oldURI){
         String newURI;
         try {

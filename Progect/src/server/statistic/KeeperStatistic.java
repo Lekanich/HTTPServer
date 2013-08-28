@@ -32,6 +32,7 @@ public class KeeperStatistic {
     private List<RequestDoneStatus> list;
 
     private AtomicInteger connected;
+    //Wait this request from redirect, used for calculate speed
     public Set<String> systemRequests;
 
     public KeeperStatistic(){
@@ -97,6 +98,7 @@ public class KeeperStatistic {
         ipStatCount.put(ip, counter);
         ipStatLast.put(ip, date);
     }
+
 
     public synchronized String getStat(){
         //1
