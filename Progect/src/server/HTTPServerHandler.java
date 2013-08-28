@@ -14,6 +14,8 @@ import java.net.URLDecoder;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -84,7 +86,7 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             MyNioSocketChannel mns = (MyNioSocketChannel)ctx.channel();
             RequestDoneStatus rds = mns.getRequest();
             if(rds!=null){
-                String uriForTable = decoder(HttpHeaders.getHost(req).concat(uri));
+                String uriForTable = decoder(uri);
                 rds.setUrl(uriForTable);
             }
 
@@ -94,6 +96,39 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
                     keeper.addRequestDoneStatus(mns.getRequestAndRemove());
                 return;
             }
+
+            for(Map.Entry<String, String> entry : req.headers()){
+                p(entry.getKey()+" "+entry.getValue());
+            }
+
+
+            //processing speed results
+            String strangerURL = uri.substring(1);
+            if(isNumber(strangerURL)){
+//                keeper.decIpStat(((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().toString().substring(1));
+                RequestDoneStatus rdsV = keeper.getRequest(strangerURL);
+                if(rdsV!=null){
+                    long timeFirst = rdsV.getBackDate().getTime();
+                    long timeLast = rds.getDate().getTime();
+                    long countTime = timeLast-timeFirst;
+                    p("Count time: "+countTime);
+                    int countBytes = rds.getGetByte()+rdsV.getSendByte();
+                    p("Count bytes: "+countBytes);
+                    int speed = (int)(1000*(double)countBytes/(double)countTime);
+                    p("Speed: "+speed);
+                    rdsV.setId(String.valueOf(mns.hashCode()*strangerURL.hashCode()));
+                    rdsV.setSpeed(speed);
+                    rds.setContent(rdsV);
+                    uri = rdsV.getUrl();
+                }
+            }else{
+                //set for count speed
+                String newStrangeURI = ADDRESS_PREFIX+HttpHeaders.getHost(req)+"/"+rds.getId();
+                p(newStrangeURI);
+                sendRedirect(ctx, newStrangeURI);
+                return;
+            }
+
             if(uri.equals(ADDRESS_HELLO)){
                 Thread.sleep(WAIT);
                 sendText(ctx, req, CONTENT_HELLO);
@@ -135,6 +170,11 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             }
         }
         return newURI;
+    }
+
+    private static boolean isNumber(String string){
+        Pattern pattern = Pattern.compile("(-|)[1-9]+[0-9]*");
+        return pattern.matcher(string).matches();
     }
 
     private static String getNewURI(String oldURI){

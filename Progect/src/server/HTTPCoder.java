@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 import java.util.Map;
 
+
 /**
  * Created with IntelliJ IDEA.
  * User: Sasha
@@ -50,9 +51,9 @@ public class HTTPCoder extends CombinedChannelDuplexHandler<HttpRequestDecoder, 
 //        p("chr "+ctx.channel().hashCode());
 //        p("chr "+ctx.pipeline().hashCode());
         UnpooledUnsafeDirectByteBuf ub = (UnpooledUnsafeDirectByteBuf)msg;
-        String ip = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().toString().substring(1);
+        String ip = ((InetSocketAddress) mns.remoteAddress()).getAddress().toString().substring(1);
         Date date = new Date(System.currentTimeMillis());
-        RequestDoneStatus rds = new RequestDoneStatus(ctx.channel().hashCode(), ip, null,date, 0,ub.readableBytes(),0);
+        RequestDoneStatus rds = new RequestDoneStatus(String.valueOf(mns.hashCode()*ip.hashCode()), ip, null,date, 0,ub.readableBytes(),0);
         keeper.addIpStat(ip, date);
         mns.addRequest(rds);
 //        keeper.addRequestDoneStatus(rds);
@@ -74,6 +75,7 @@ public class HTTPCoder extends CombinedChannelDuplexHandler<HttpRequestDecoder, 
             for(Map.Entry<String, String> h : d.headers().entries()) {
                 rds.addSendByte(h.getKey().length()+h.getValue().length());
             }
+            rds.setBackDate(new Date(System.currentTimeMillis()));
             keeper.addRequestDoneStatus(rds);
         }
         super.write(ctx, msg, promise);

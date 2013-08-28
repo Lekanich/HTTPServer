@@ -60,6 +60,15 @@ public class KeeperStatistic {
         list.add(rds);
     }
 
+    public synchronized void decIpStat(String ip){
+        int counter = 0;
+        if(ipStatCount.containsKey(ip)){
+            counter = ipStatCount.get(ip);
+        }
+        counter--;
+        ipStatCount.put(ip, counter);
+    }
+
     public synchronized void addIpStat(String ip, Date date){
         int counter = 0;
         if(ipStatCount.containsKey(ip)){
@@ -144,9 +153,9 @@ public class KeeperStatistic {
         return list;
     }
 
-    public RequestDoneStatus getRequest(int id) {
+    public RequestDoneStatus getRequest(String id) {
         for(RequestDoneStatus rds : list)
-            if(rds.getId() == id) return rds;
+            if(rds.getId().equals(id)) return rds;
         return null;
     }
 }

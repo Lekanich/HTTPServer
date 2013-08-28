@@ -12,19 +12,24 @@ import java.util.Formatter;
  * To change this template use File | Settings | File Templates.
  */
 public class RequestDoneStatus {
-    //channel's hashcode
-    private int id;
+
+    /**
+     * Version-id, used for remember
+     */
+    private String id;
 
     private String ip;
     private String url;
     private Date date;
+    private Date backDate;
 
     private int sendByte;
     private int getByte;
     private int speed;
 
-    public RequestDoneStatus(int id, String ip, String url, Date date, int sendByte, int getByte, int speed){
+    public RequestDoneStatus(String id, String ip, String url, Date date, int sendByte, int getByte, int speed){
         this.id = id;
+
         this.ip = ip;
         this.url = url;
         this.date = date;
@@ -86,6 +91,17 @@ public class RequestDoneStatus {
         this.speed = speed;
     }
 
+    public void setContent(RequestDoneStatus rds){
+        this.id = rds.id;
+        this.ip = rds.ip;
+        this.url = rds.url;
+        this.date = rds.date;
+        this.backDate = rds.backDate;
+        this.getByte = rds.getByte;
+        this.sendByte = rds.sendByte;
+        this.speed = rds.speed;
+    }
+
     @Override
     public String toString(){
         Formatter f = new Formatter();
@@ -93,11 +109,19 @@ public class RequestDoneStatus {
         return f.toString();
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public Date getBackDate() {
+        return backDate;
+    }
+
+    public void setBackDate(Date backDate) {
+        this.backDate = backDate;
     }
 }
