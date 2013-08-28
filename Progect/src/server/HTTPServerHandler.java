@@ -90,45 +90,41 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
                 rds.setUrl(uriForTable);
             }
 
-            if(uri.equals("/favicon.ico")) {
-                //remember in keeper this request
-                if(rds!=null)
-                    keeper.addRequestDoneStatus(mns.getRequestAndRemove());
-                return;
-            }
-
-            for(Map.Entry<String, String> entry : req.headers()){
-                p(entry.getKey()+" "+entry.getValue());
-            }
-
-
             //processing speed results
             String strangerURL = uri.substring(1);
-            if(isNumber(strangerURL)){
-//                keeper.decIpStat(((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().toString().substring(1));
+            if(keeper.isSystemRequest(strangerURL)){
+                keeper.decIpStat(((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().toString().substring(1));
                 RequestDoneStatus rdsV = keeper.getRequest(strangerURL);
                 if(rdsV!=null){
                     long timeFirst = rdsV.getBackDate().getTime();
                     long timeLast = rds.getDate().getTime();
                     long countTime = timeLast-timeFirst;
-                    p("Count time: "+countTime);
+//                    p("Count time: "+countTime);
                     int countBytes = rds.getGetByte()+rdsV.getSendByte();
-                    p("Count bytes: "+countBytes);
+//                    p("Count bytes: "+countBytes);
                     int speed = (int)(1000*(double)countBytes/(double)countTime);
-                    p("Speed: "+speed);
+//                    p("Speed: "+speed);
                     rdsV.setId(String.valueOf(mns.hashCode()*strangerURL.hashCode()));
                     rdsV.setSpeed(speed);
                     rds.setContent(rdsV);
                     uri = rdsV.getUrl();
+                    keeper.removeRequestDoneStatus(rdsV);
                 }
             }else{
                 //set for count speed
                 String newStrangeURI = ADDRESS_PREFIX+HttpHeaders.getHost(req)+"/"+rds.getId();
-                p(newStrangeURI);
+                keeper.addSystemRequest(rds.getId());
+//                p(newStrangeURI);
                 sendRedirect(ctx, newStrangeURI);
                 return;
             }
 
+//            if(uri.equals("/favicon.ico")) {
+//                //remember in keeper this request
+//                if(rds!=null)
+//                    keeper.addRequestDoneStatus(mns.getRequestAndRemove());
+//                return;
+//            }
             if(uri.equals(ADDRESS_HELLO)){
                 Thread.sleep(WAIT);
                 sendText(ctx, req, CONTENT_HELLO);
@@ -153,7 +149,7 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         p("exceptionCa");
-        cause.printStackTrace();
+//        cause.printStackTrace();
         sendError(ctx, HttpResponseStatus.BAD_REQUEST);
         ctx.close();
     }
@@ -170,11 +166,6 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
             }
         }
         return newURI;
-    }
-
-    private static boolean isNumber(String string){
-        Pattern pattern = Pattern.compile("(-|)[1-9]+[0-9]*");
-        return pattern.matcher(string).matches();
     }
 
     private static String getNewURI(String oldURI){
@@ -205,7 +196,6 @@ public class HTTPServerHandler extends ChannelInboundHandlerAdapter {
                 HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
         response.headers().set(HttpHeaders.Names.LOCATION, newUri);
         // Close the connection as soon as the error message is sent.
-//        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
 

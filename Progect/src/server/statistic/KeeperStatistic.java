@@ -25,12 +25,14 @@ public class KeeperStatistic {
     private static final String EMPTY = " No requests or memory is empty.";
 
     private static final byte MAX_SIZE_CAPACITY = 16;
+
     private Map<String, Integer> ipStatCount;
     private Map<String, Date> ipStatLast;
     private Map<String, Integer> urlStatRedirect;
     private List<RequestDoneStatus> list;
-    private AtomicInteger connected;
 
+    private AtomicInteger connected;
+    public Set<String> systemRequests;
 
     public KeeperStatistic(){
         ipStatCount = new HashMap<String, Integer>();
@@ -38,10 +40,23 @@ public class KeeperStatistic {
         urlStatRedirect = new HashMap<String, Integer>();
         list = new LinkedList<RequestDoneStatus>();
         connected = new AtomicInteger(0);
+        systemRequests = new HashSet<String>();
     }
 
     public static void p(Object o){
         System.out.println(o);
+    }
+
+    public boolean isSystemRequest(String value){
+        synchronized (systemRequests){
+            return systemRequests.remove(value);
+        }
+    }
+
+    public void addSystemRequest(String value){
+        synchronized (systemRequests){
+            systemRequests.add(value);
+        }
     }
 
     public synchronized void addUrlRedirectStat(String url){
@@ -58,6 +73,10 @@ public class KeeperStatistic {
             list.remove(0);
         }
         list.add(rds);
+    }
+
+    public synchronized boolean removeRequestDoneStatus(RequestDoneStatus rds){
+        return list.remove(rds);
     }
 
     public synchronized void decIpStat(String ip){
